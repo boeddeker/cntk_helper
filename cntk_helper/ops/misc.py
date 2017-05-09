@@ -25,3 +25,7 @@ def blstm(N, name=''):
 
     # f = cntk.layers.Recurrence(C.layers.LSTM(N))(x)
     # b = cntk.layers.Recurrence(C.layers.LSTM(N))(x, go_backwards=False)
+
+def bce(x, t):
+    return -sequence_mean(cntk.reduce_mean(
+        t * log2(x + 1e-6) + (1 - t) * log2((1 - x) + 1e-6)))
