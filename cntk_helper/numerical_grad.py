@@ -62,12 +62,15 @@ def test_numerical_grad(
         y,
         arguments,
         grad_outputs,
-        eps=1e-3
+        eps=1e-3,
+        rtol=1e-7,
+        atol=1e-7,
 ):
     """
     Not Supported:
         - Different sequence length
           (everything has to be a ndarray and not list of ndarray)
+        - Two or more outputs
     """
     assert eps > 0
     assert isinstance(arguments, dict)
@@ -101,16 +104,14 @@ def test_numerical_grad(
             ys2 = np.array(y.eval(arguments))
             arguments[k][i] = orig
 
-            for y1, y2, gy in \
-                    zip(ys1.ravel(), ys2.ravel(), grad_outputs.ravel()):
-                tmp = np.sum((y1 - y2) * gy)
-                grads[k][i] += tmp / (2 * eps)
+            grads[k][i] += np.sum((ys1 - ys2) * grad_outputs) / (2 * eps)
+
         cntk_grads[k] = np.array(cntk_grads[k])
         if grads[k].ndim == cntk_grads[k].ndim - 1 \
                 and cntk_grads[k].shape[0] == 1:
             grads[k] = grads[k][None, ...]
 
-    assert_allclose(cntk_grads, grads)
+    assert_allclose(cntk_grads, grads, rtol=rtol, atol=atol)
     return grads
 
 
