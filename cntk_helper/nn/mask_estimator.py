@@ -47,3 +47,51 @@ learner = cntk.adam(out_v.parameters, lr_schedule, momentum=momentum)
 #     freq=10, log_dir='/net/vol/boeddeker/tensorboard_log', model=loss)
 
 trainer = cntk.Trainer(out_v, loss, learner)
+
+
+
+t = TimerDict()
+#iterator = tqdm_notebook(ds[:100], desc='')
+
+for i, batch in enumerate(t['data load'](ds)):
+    
+
+    with t['preprocess ']:
+        x, n, y = batch.X, batch.N, batch.observed
+        X, N, Y = stft_v2([x, n, y]) 
+        mask_X, mask_N = biased_binary_mask([X, N])
+
+    with t['train']:
+        trainer.train_minibatch({
+                                in_v: np.abs(Y).astype(np.float32), 
+                                c_mask_x: mask_X.astype(np.float32),
+                                c_mask_n: mask_N.astype(np.float32)
+                            })
+    
+    with t['display']:
+        clear_output(wait=True)
+        display(i)
+        display(trainer.previous_minibatch_loss_average)
+        # iterator.set_description(str())
+
+    
+batch = ds[-1]
+    
+x, n, y = batch.X, batch.N, batch.observed
+
+X, N, Y = stft_v2([x, n, y]) 
+mask_X, mask_N = biased_binary_mask([X, N])
+
+eval_loss.eval({
+                        in_v: np.abs(Y).astype(np.float32), 
+                        c_mask_x: mask_X.astype(np.float32),
+                        c_mask_n: mask_N.astype(np.float32)
+                    })
+    
+#trainer.test_minibatch({
+#                        in_v : in_d, 
+#                        out_ref_v : out_ref_d,
+#                    })
+
+
+#np.array([trainer.model.eval({in_v : in_d})[:, :, 0], out_ref_d]).T
